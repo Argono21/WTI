@@ -5,6 +5,9 @@ import WideTechIdProject.Repository.OrderRepository;
 import WideTechIdProject.Service.ProductService;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 
@@ -18,15 +21,24 @@ public class ProductServiceImpl implements ProductService {
     private OrderRepository orderRepository;
 
     @Override
-    public Pair<List<Product>, Long> getAllOrders(String id) {
+    public Pair<Page<Product>, Long> getAllOrders(String id, Pageable pageable) {
         List<Product> productList = this.orderRepository.findAll();
-        Long total = 0L;
-        for (Product product : productList) {
-            if (product.getCustomerName().equals(id)) {
-                total+= product.getPrice();
-            }
-        }
-        return Pair.of(productList, total);
+
+        List<Product> filteredProducts = productList.stream()
+                .filter(product -> product.getCustomerName().equals(id))
+                .toList();
+        Long total = filteredProducts.stream()
+                .mapToLong(totalPrice -> totalPrice.getPrice() * totalPrice.getQuantity())
+                .sum();
+
+        List<Product> paginatedProducts = setPagination(pageable, filteredProducts);
+        return Pair.of(new PageImpl<>(paginatedProducts, pageable, filteredProducts.size()), total);
+    }
+
+    private static List<Product> setPagination(Pageable pageable, List<Product> filteredProducts) {
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), filteredProducts.size());
+        return filteredProducts.subList(start, end);
     }
 
     @Override

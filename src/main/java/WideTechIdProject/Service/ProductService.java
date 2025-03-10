@@ -2,12 +2,12 @@ package WideTechIdProject.Service;
 
 
 import WideTechIdProject.Model.Product;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.util.Pair;
 
-import java.util.List;
-
 public interface ProductService {
-    Pair<List<Product>, Long> getAllOrders (String id);
+    Pair<Page<Product>, Long> getAllOrders (String id, Pageable pageable);
 
     Product createOrder (Product product);
 }
